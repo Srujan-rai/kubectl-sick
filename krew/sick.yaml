@@ -1,0 +1,57 @@
+apiVersion: krew.googlecontainertools.github.com/v1alpha2
+kind: Plugin
+metadata:
+  name: sick
+spec:
+  version: v0.1.0
+  homepage: https://github.com/srujan-rai/kubectl-sick
+  shortDescription: Show all unhealthy resources in your cluster
+  description: |
+    Scans pods, nodes, PVCs, deployments, jobs, HPAs, and cert-manager
+    certificates across all namespaces and lists every unhealthy resource
+    sorted by severity (critical → warning → info).
+
+    Use --explain to fetch logs and events for a specific broken resource.
+    Use --watch to monitor the cluster for new issues in real time.
+    Use --json for machine-readable output to pipe into alerting scripts.
+
+  platforms:
+    - selector:
+        matchLabels:
+          os: linux
+          arch: amd64
+      uri: https://github.com/srujan-rai/kubectl-sick/releases/download/v0.1.0/kubectl-sick_linux_amd64.tar.gz
+      sha256: FILL_AFTER_RELEASE
+      bin: kubectl-sick
+
+    - selector:
+        matchLabels:
+          os: linux
+          arch: arm64
+      uri: https://github.com/srujan-rai/kubectl-sick/releases/download/v0.1.0/kubectl-sick_linux_arm64.tar.gz
+      sha256: FILL_AFTER_RELEASE
+      bin: kubectl-sick
+
+    - selector:
+        matchLabels:
+          os: darwin
+          arch: amd64
+      uri: https://github.com/srujan-rai/kubectl-sick/releases/download/v0.1.0/kubectl-sick_darwin_amd64.tar.gz
+      sha256: FILL_AFTER_RELEASE
+      bin: kubectl-sick
+
+    - selector:
+        matchLabels:
+          os: darwin
+          arch: arm64
+      uri: https://github.com/srujan-rai/kubectl-sick/releases/download/v0.1.0/kubectl-sick_darwin_arm64.tar.gz
+      sha256: FILL_AFTER_RELEASE
+      bin: kubectl-sick
+
+    - selector:
+        matchLabels:
+          os: windows
+          arch: amd64
+      uri: https://github.com/srujan-rai/kubectl-sick/releases/download/v0.1.0/kubectl-sick_windows_amd64.zip
+      sha256: FILL_AFTER_RELEASE
+      bin: kubectl-sick.exe
