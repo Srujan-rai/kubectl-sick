@@ -221,9 +221,11 @@ func runWatch(ctx context.Context, client kubernetes.Interface, dynClient dynami
 		issues := runScan(ctx, client, dynClient, discoClient)
 		issues = filterBySeverity(issues)
 
-		// Diff
+		// Diff — save current before mutation so prevIssues is never polluted with markers
 		prevMap := issueMap(prevIssues)
 		currMap := issueMap(issues)
+		currentIssues := make([]types.Issue, len(issues))
+		copy(currentIssues, issues)
 
 		for key := range prevMap {
 			if _, exists := currMap[key]; !exists {
@@ -244,7 +246,7 @@ func runWatch(ctx context.Context, client kubernetes.Interface, dynClient dynami
 
 		types.SortIssues(displayIssues)
 		output.PrintTable(displayIssues, noColor)
-		prevIssues = issues
+		prevIssues = currentIssues
 		_ = sigCh
 		_ = clusterContext
 	}
@@ -258,7 +260,7 @@ func runWatch(ctx context.Context, client kubernetes.Interface, dynClient dynami
 }
 
 func issueKey(issue types.Issue) string {
-	return fmt.Sprintf("%s/%s/%s/%s", issue.Kind, issue.Namespace, issue.Name, issue.Reason)
+	return fmt.Sprintf("%s/%s/%s", issue.Kind, issue.Namespace, issue.Name)
 }
 
 func issueMap(issues []types.Issue) map[string]types.Issue {
@@ -289,7 +291,9 @@ func runExplain(ctx context.Context, client kubernetes.Interface, target string)
 
 	// Fetch pod logs
 	pod, err := client.CoreV1().Pods(ns).Get(ctx, name, metav1.GetOptions{})
-	if err == nil {
+	if err != nil {
+		fmt.Printf("LOGS: could not fetch pod: %v\n", err)
+	} else {
 		fmt.Println("LOGS (last 20 lines):")
 		tailLines := int64(20)
 		for _, container := range pod.Spec.Containers {
@@ -298,8 +302,10 @@ func runExplain(ctx context.Context, client kubernetes.Interface, target string)
 				Container: container.Name,
 				TailLines: &tailLines,
 			})
-			logs, err := req.DoRaw(ctx)
-			if err == nil {
+			logs, logErr := req.DoRaw(ctx)
+			if logErr != nil {
+				fmt.Printf("  (error fetching logs: %v)\n", logErr)
+			} else {
 				fmt.Printf("  %s\n", string(logs))
 			}
 		}

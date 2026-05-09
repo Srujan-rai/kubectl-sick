@@ -23,12 +23,12 @@ type JSONSummary struct {
 }
 
 type JSONIssue struct {
-	Severity  string    `json:"severity"`
-	Kind      string    `json:"kind"`
-	Namespace string    `json:"namespace"`
-	Name      string    `json:"name"`
-	Reason    string    `json:"reason"`
-	Since     time.Time `json:"since,omitempty"`
+	Severity  string     `json:"severity"`
+	Kind      string     `json:"kind"`
+	Namespace string     `json:"namespace"`
+	Name      string     `json:"name"`
+	Reason    string     `json:"reason"`
+	Since     *time.Time `json:"since,omitempty"`
 }
 
 func PrintJSON(issues []types.Issue, clusterContext string) error {
@@ -74,7 +74,8 @@ func buildOutput(issues []types.Issue, clusterContext string) JSONOutput {
 			Reason:    issue.Reason,
 		}
 		if !issue.Since.IsZero() {
-			ji.Since = issue.Since
+			t := issue.Since
+			ji.Since = &t
 		}
 		jsonIssues = append(jsonIssues, ji)
 	}
