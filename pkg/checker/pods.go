@@ -19,6 +19,8 @@ func CheckPods(ctx context.Context, client kubernetes.Interface, namespace strin
 	var issues []types.Issue
 
 	for _, pod := range pods.Items {
+		containerIssueFound := false
+
 		for _, cs := range pod.Status.ContainerStatuses {
 			if cs.State.Waiting != nil {
 				reason := cs.State.Waiting.Reason
@@ -31,6 +33,7 @@ func CheckPods(ctx context.Context, client kubernetes.Interface, namespace strin
 						Name:      pod.Name,
 						Reason:    fmt.Sprintf("CrashLoopBackOff (%dx)", cs.RestartCount),
 					})
+					containerIssueFound = true
 				case "ImagePullBackOff", "ErrImagePull":
 					issues = append(issues, types.Issue{
 						Severity:  types.Warning,
@@ -39,6 +42,7 @@ func CheckPods(ctx context.Context, client kubernetes.Interface, namespace strin
 						Name:      pod.Name,
 						Reason:    reason,
 					})
+					containerIssueFound = true
 				case "Error":
 					issues = append(issues, types.Issue{
 						Severity:  types.Critical,
@@ -47,6 +51,7 @@ func CheckPods(ctx context.Context, client kubernetes.Interface, namespace strin
 						Name:      pod.Name,
 						Reason:    "Error",
 					})
+					containerIssueFound = true
 				}
 			}
 
@@ -62,6 +67,7 @@ func CheckPods(ctx context.Context, client kubernetes.Interface, namespace strin
 					Name:      pod.Name,
 					Reason:    fmt.Sprintf("CrashLoopBackOff (%dx)", cs.RestartCount),
 				})
+				containerIssueFound = true
 			}
 
 			if cs.LastTerminationState.Terminated != nil &&
@@ -73,10 +79,11 @@ func CheckPods(ctx context.Context, client kubernetes.Interface, namespace strin
 					Name:      pod.Name,
 					Reason:    "OOMKilled",
 				})
+				containerIssueFound = true
 			}
 		}
 
-		if pod.Status.Phase == "Pending" {
+		if !containerIssueFound && pod.Status.Phase == "Pending" {
 			pendingDuration := time.Since(pod.CreationTimestamp.Time)
 			if pendingDuration > 5*time.Minute {
 				issues = append(issues, types.Issue{
