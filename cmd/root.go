@@ -33,6 +33,12 @@ var (
 	kubeconfig  string
 )
 
+var appVersion = "dev"
+
+func SetVersion(v string) {
+	appVersion = v
+}
+
 var rootCmd = &cobra.Command{
 	Use:   "kubectl-sick",
 	Short: "Lists every broken thing in your cluster, sorted worst-first",
@@ -40,6 +46,7 @@ var rootCmd = &cobra.Command{
 }
 
 func Execute() error {
+	rootCmd.Version = appVersion
 	return rootCmd.Execute()
 }
 
