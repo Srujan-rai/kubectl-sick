@@ -50,6 +50,20 @@ func CheckPods(ctx context.Context, client kubernetes.Interface, namespace strin
 				}
 			}
 
+			// Catch CrashLoop in the terminated phase of its backoff cycle:
+			// pod shows "Running/Terminated" not "Waiting:CrashLoopBackOff" when kubectl-sick polls.
+			if cs.State.Waiting == nil && cs.RestartCount >= 3 &&
+				cs.LastTerminationState.Terminated != nil &&
+				cs.LastTerminationState.Terminated.Reason == "Error" {
+				issues = append(issues, types.Issue{
+					Severity:  types.Critical,
+					Kind:      "Pod",
+					Namespace: pod.Namespace,
+					Name:      pod.Name,
+					Reason:    fmt.Sprintf("CrashLoopBackOff (%dx)", cs.RestartCount),
+				})
+			}
+
 			if cs.LastTerminationState.Terminated != nil &&
 				cs.LastTerminationState.Terminated.Reason == "OOMKilled" {
 				issues = append(issues, types.Issue{
